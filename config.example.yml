@@ -1,0 +1,44 @@
+logger: false # Additional log info
+scpslConfig: # SCP:SL Config sector. Optional, need to fill if you have at least 1 scp:sl server in servers section
+  accountID: 123 # Your account ID, can be found here: https://servers.scpslgame.com/ (click on your server to expand)
+  APIKey: "SecretKey" # Type !api in your scp:sl server console
+servers:
+  scpclassic: # Unique name, doesn't matter which one
+    name: "SCP:SL Classic" # Name of your server, for log purposes
+    game: "scpsl" # Type of game, available: scpsl, source (CS:GO, TF2 etc.), mc, 7d2d, ut3
+    botToken: "SecretToken" # Discord bot token
+    botID: "1234" # Discord bot ID
+    info: # Additional info for monitoring
+      serverID: 55000 # For SCP:SL needed serverID, can be found here: https://servers.scpslgame.com/ (click on your server to expand)
+  csgoclassic:
+    name: "CS:GO Classic"
+    game: "source"
+    botToken: "SecretToken"
+    botID: "1234"
+    info: # For Source servers ip and mapInfo required
+      ip: "127.0.0.1:27015" # Source server ip with port
+      mapInfo: true # If true, bot will show online and current map. Example: 0/20 on de_dust2
+  minecraft:
+    name: "Minecraft Hardcore"
+    game: "mc"
+    botToken: "SecretToken"
+    botID: "1234"
+    info: # For Minecraft servers ip and maxPlayers required
+      ip: "127.0.0.1:25565" # Server ip with port
+      maxPlayers: 20
+  7d2d:
+    name: "7Days"
+    game: "7d2d"
+    botToken: "SecretToken"
+    botID: "1234"
+    info: # For 7D2D servers telnetIP, telnetPassword and maxPlayers required
+      telnetIP: "192.168.228.69:8081" # TELNET IP with port. Recommend you to protect telnet service with firewall rules
+      telnetPassword: "CHANGEME" # TELNET password
+      maxPlayers: 32
+  ut3:
+    name: "Unreal Tournament 3"
+    game: "ut3"
+    botToken: "SecretToken"
+    botID: "1234"
+    info: # For UT3 servers ip required
+      ip: "127.0.0.1:123" # Server ip with port
