@@ -6,6 +6,9 @@ Discord MBM is a tool which provide ability to manage bots with purpose to displ
 
 **Avaible Games**: SCP:SL, Minecraft, Source(CS:GO, TF2, etc.), 7 Days To Die, Unreal Engine 3(Unreal Tournament 3 etc.)
 
+## Installation
+[English](https://github.com/Stairdeck/discordMBM/wiki/Installation-EN) | [Русский](https://github.com/Stairdeck/discordMBM/wiki/Installation-RU)
+
 ## Credits
 Thanks a lot to
 
