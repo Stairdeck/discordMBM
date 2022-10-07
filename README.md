@@ -4,6 +4,8 @@ Discord MBM is a tool which provide ability to manage bots with purpose to displ
 
 ![Discord Monitoring bots example](https://i.ibb.co/4FcZZGY/bots.jpg)
 
+**Avaible Games**: SCP:SL, Minecraft, Source(CS:GO, TF2, etc.), 7 Days To Die, Unreal Engine 3(Unreal Tournament 3 etc.)
+
 ## Credits
 Thanks a lot to
 
