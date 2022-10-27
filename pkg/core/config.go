@@ -13,16 +13,19 @@ type Config struct {
 }
 
 type SCPSLConfig struct {
-	AccountID *int    `yaml:"accountID"`
-	APIKey    *string `yaml:"APIKey"`
+	AccountID    *int    `yaml:"accountID"`
+	APIKey       *string `yaml:"APIKey"`
+	RefreshDelay *int    `yaml:"refreshDelay"`
 }
 
 type ServerConfig struct {
-	Name     string                 `yaml:"name"`
-	Game     string                 `yaml:"game"`
-	BotToken string                 `yaml:"botToken"`
-	BotID    string                 `yaml:"botID"`
-	Info     map[string]interface{} `yaml:"info"`
+	Name         string                 `yaml:"name"`
+	Game         string                 `yaml:"game"`
+	BotToken     string                 `yaml:"botToken"`
+	BotID        string                 `yaml:"botID"`
+	RefreshDelay int                    `yaml:"refreshDelay"`
+	Enabled      bool                   `yaml:"enabled"`
+	Info         map[string]interface{} `yaml:"info"`
 }
 
 func ParseConfig(path string) (*Config, error) {

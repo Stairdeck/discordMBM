@@ -26,6 +26,11 @@ func CreateMonitor(config *core.Config) (*Monitor, error) {
 }
 
 func (m *Monitor) Run(serverConfig core.ServerConfig) {
+	if serverConfig.RefreshDelay <= 0 {
+		log.Println(fmt.Sprintf("server %s must have valid refreshDelay property", serverConfig.Name))
+		return
+	}
+
 	if serverConfig.Info["ip"] == nil {
 		log.Println(fmt.Sprintf("server %s must have ip properties in info section", serverConfig.Name))
 		return
@@ -48,13 +53,13 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 
 		for {
 			srvInfo, err := m.readServerInfo(ip)
-			if err != nil {
+			if err != nil && m.Config.Logger {
 				log.Println(fmt.Sprintf("Error while parsing server info of %s. Details: %s", serverConfig.Name, err.Error()))
 			}
 
 			if srvInfo == nil || srvInfo.Players == nil {
 				if m.Config.Logger {
-					log.Println(fmt.Sprintf("Server %s not found, trying again in 30 seconds", serverConfig.Name))
+					log.Println(fmt.Sprintf("Server %s not found, trying again in %d seconds", serverConfig.Name, serverConfig.RefreshDelay))
 				}
 
 				err := s.UpdateStatus(discord.GetServerStatusPayload(false, "0", "0", nil))
@@ -78,7 +83,7 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 				}
 			}
 
-			time.Sleep(30 * time.Second)
+			time.Sleep(time.Duration(serverConfig.RefreshDelay) * time.Second)
 		}
 	})
 

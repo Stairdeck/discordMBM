@@ -7,16 +7,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/andersfylling/disgord"
+	"github.com/teivah/broadcast"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
 
 type Monitor struct {
 	Config *core.Config
+	Relay  *broadcast.Relay[APIResponse]
 }
 
 type ServerInfo struct {
@@ -32,19 +33,16 @@ type APIResponse struct {
 }
 
 func CreateMonitor(config *core.Config) (*Monitor, error) {
-	if config.SCPSLConfig.APIKey == nil || config.SCPSLConfig.AccountID == nil {
-		return nil, errors.New("SCP:SL APIKey and AccountID are required")
+	if config.SCPSLConfig.APIKey == nil || config.SCPSLConfig.AccountID == nil || config.SCPSLConfig.RefreshDelay == nil {
+		return nil, errors.New("SCP:SL APIKey, AccountID and RefreshDelay are required")
 	}
 
-	_, err := os.ReadDir("cache")
-	if err != nil {
-		err = os.Mkdir("cache", os.ModePerm)
-		if err != nil {
-			return nil, errors.New("can not create cache folder")
-		}
+	if *config.SCPSLConfig.RefreshDelay <= 0 {
+		return nil, errors.New("invalid RefreshDelay value")
 	}
 
 	m := Monitor{Config: config}
+	m.Relay = broadcast.NewRelay[APIResponse]()
 
 	go func() {
 		for {
@@ -53,7 +51,7 @@ func CreateMonitor(config *core.Config) (*Monitor, error) {
 				log.Println(err)
 			}
 
-			time.Sleep(30 * time.Second)
+			time.Sleep(time.Duration(*config.SCPSLConfig.RefreshDelay) * time.Second)
 		}
 	}()
 
@@ -85,9 +83,10 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 			log.Println(fmt.Sprintf("Successfully connected discord bot on server %s", serverConfig.Name))
 		}
 
-		for {
-			srvInfo, err := m.readServerInfo(serverID)
-			if err != nil {
+		l := m.Relay.Listener(1)
+		for n := range l.Ch() {
+			srvInfo, err := m.readServerInfo(n, serverID)
+			if err != nil && m.Config.Logger {
 				log.Println(err)
 			}
 
@@ -111,32 +110,14 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 					log.Println(err)
 				}
 			}
-
-			time.Sleep(30 * time.Second)
 		}
 	})
 
 	return
 }
 
-func (m *Monitor) readServerInfo(serverID int) (*ServerInfo, error) {
-	data, err := os.ReadFile("cache/scpsl.json")
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error while reading scp:sl cache. Details: %s", err.Error()))
-	}
-
-	if len(data) == 0 {
-		return nil, nil
-	}
-
-	var response APIResponse
-
-	err = json.Unmarshal(data, &response)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error while parsing scp:sl cache. Details: %s", err.Error()))
-	}
-
-	for _, v := range response.Servers {
+func (m *Monitor) readServerInfo(info APIResponse, serverID int) (*ServerInfo, error) {
+	for _, v := range info.Servers {
 		if *v.ID == serverID {
 			return &v, nil
 		}
@@ -181,11 +162,6 @@ func (m *Monitor) parseServers() error {
 		return errors.New(fmt.Sprintf("failed to request scp:sl api. Details: %s", err.Error()))
 	}
 
-	file, err := os.Create("cache/scpsl.json")
-	if err != nil {
-		return errors.New(fmt.Sprintf("failed to create scp:sl cache data. Details: %s", err.Error()))
-	}
-
 	var response APIResponse
 
 	err = json.Unmarshal(reqData, &response)
@@ -197,11 +173,7 @@ func (m *Monitor) parseServers() error {
 		return errors.New(fmt.Sprintf("scp:sl api response status error: %s", *response.Error))
 	}
 
-	_, err = file.Write(reqData)
-	err = file.Close()
-	if err != nil {
-		return errors.New(fmt.Sprintf("failed to write scp:sl cache data. Details: %s", err.Error()))
-	}
+	m.Relay.Notify(response)
 
 	if m.Config.Logger {
 		log.Println("Successfully got data from scp:sl api")

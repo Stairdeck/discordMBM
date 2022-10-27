@@ -9,6 +9,7 @@ require (
 	github.com/klauspost/compress v1.15.1 // indirect
 	github.com/rumblefrog/go-a2s v1.0.1 // indirect
 	github.com/sandertv/gophertunnel v1.24.11 // indirect
+	github.com/teivah/broadcast v0.1.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect

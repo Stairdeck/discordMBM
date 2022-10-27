@@ -29,6 +29,11 @@ func CreateMonitor(config *core.Config) (*Monitor, error) {
 }
 
 func (m *Monitor) Run(serverConfig core.ServerConfig) {
+	if serverConfig.RefreshDelay <= 0 {
+		log.Println(fmt.Sprintf("server %s must have valid refreshDelay property", serverConfig.Name))
+		return
+	}
+
 	if serverConfig.Info["telnetIP"] == nil ||
 		serverConfig.Info["telnetPassword"] == nil ||
 		serverConfig.Info["maxPlayers"] == nil {
@@ -38,16 +43,6 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 				serverConfig.Name))
 		return
 	}
-
-	ip := fmt.Sprintf("%s", serverConfig.Info["telnetIP"])
-	password := fmt.Sprintf("%s", serverConfig.Info["telnetPassword"])
-
-	conn, err := telnet.Dial(ip, password)
-	if err != nil {
-		log.Println(fmt.Sprintf("failed to set up parser on server %s. Details: %s", serverConfig.Name, err.Error()))
-		return
-	}
-	defer conn.Close()
 
 	bot, err := discord.InitBot(serverConfig)
 	if err != nil {
@@ -63,14 +58,14 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 		}
 
 		for {
-			srvInfo, err := m.readServerInfo(conn)
-			if err != nil {
+			srvInfo, err := m.readServerInfo(serverConfig)
+			if err != nil && m.Config.Logger {
 				log.Println(err)
 			}
 
 			if srvInfo == nil || srvInfo.Players == nil {
 				if m.Config.Logger {
-					log.Println(fmt.Sprintf("Server %s not found, trying again in 30 seconds", serverConfig.Name))
+					log.Println(fmt.Sprintf("Server %s not found, trying again in %d seconds", serverConfig.Name, serverConfig.RefreshDelay))
 				}
 
 				err := s.UpdateStatus(discord.GetServerStatusPayload(false, "0", "0", nil))
@@ -96,14 +91,22 @@ func (m *Monitor) Run(serverConfig core.ServerConfig) {
 				}
 			}
 
-			time.Sleep(30 * time.Second)
+			time.Sleep(time.Duration(serverConfig.RefreshDelay) * time.Second)
 		}
 	})
 
 	return
 }
 
-func (m *Monitor) readServerInfo(conn *telnet.Conn) (*ServerInfo, error) {
+func (m *Monitor) readServerInfo(serverConfig core.ServerConfig) (*ServerInfo, error) {
+	ip := fmt.Sprintf("%s", serverConfig.Info["telnetIP"])
+	password := fmt.Sprintf("%s", serverConfig.Info["telnetPassword"])
+
+	conn, err := telnet.Dial(ip, password)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("failed to set up parser on server %s. Details: %s", serverConfig.Name, err.Error()))
+	}
+
 	info, err := conn.Execute("listplayers")
 	if err != nil {
 		return nil, err
@@ -126,6 +129,11 @@ func (m *Monitor) readServerInfo(conn *telnet.Conn) (*ServerInfo, error) {
 		players = fmt.Sprintf("%d", playersNum)
 	} else {
 		return nil, errors.New(fmt.Sprintf("Unexpected telnet response. Details: %s", info))
+	}
+
+	err = conn.Close()
+	if err != nil && m.Config.Logger {
+		return nil, errors.New(fmt.Sprintf("error to close telnet connect on server %s: %s", serverConfig.Name, err.Error()))
 	}
 
 	return &ServerInfo{Players: &players}, nil

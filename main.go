@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 type Monitors struct {
@@ -31,6 +32,10 @@ func main() {
 	var monitors Monitors
 
 	for _, server := range config.Servers {
+		if !server.Enabled {
+			continue
+		}
+
 		switch server.Game {
 		case "scpsl":
 			if monitors.SCPSL == nil {
@@ -91,6 +96,6 @@ func main() {
 	}
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, os.Interrupt)
+	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 	<-sc
 }
